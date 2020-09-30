@@ -20,7 +20,7 @@ public class KafkaUtil {
     private KafkaUtil() {
     }
 
-    public static Map<String, Object> getConsumerConfigs(String servers) {
+    public static Map<String, Object> getProducerConfigs(String servers) {
         Map<String, Object> props = CollectionUtil.newHashMap();
 
         // 用于建立到Kafka集群的初始连接的主机/端口对列表。(host1:port1,host2:port2)
@@ -53,7 +53,7 @@ public class KafkaUtil {
         return props;
     }
 
-    public static Map<String, Object> getProducerConfigs(String servers, String topic, String groupId) {
+    public static Map<String, Object> getConsumerConfigs(String servers, String topic, String groupId) {
         Map<String, Object> props = CollectionUtil.newHashMap();
 
         // 用于建立到Kafka集群的初始连接的主机/端口对列表。(host1:port1,host2:port2)
