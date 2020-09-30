@@ -74,7 +74,7 @@ public class KafkaUtil {
         // value反序列化
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
 
-        // 从最早的offset开始消费
+        // 自动将偏移量重置为最新偏移量
         props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest");
 
         // 一次poll记录的数量
