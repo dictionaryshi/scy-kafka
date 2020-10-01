@@ -11,6 +11,7 @@ import com.scy.kafka.constant.KafkaConstant;
 import com.scy.kafka.model.ao.ProducerRegistryAO;
 import com.scy.kafka.properties.KafkaProperties;
 import com.scy.kafka.properties.TopicProperties;
+import com.scy.kafka.util.KafkaProducer;
 import com.scy.kafka.util.KafkaUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeansException;
@@ -76,6 +77,10 @@ public class KafkaProducerBeanDefinitionRegistryPostProcessor implements BeanDef
     }
 
     private void registerProducerClient(ProducerRegistryAO producerRegistryAO) {
+        BeanDefinitionBuilder beanDefinitionBuilder = BeanDefinitionBuilder.genericBeanDefinition(KafkaProducer.class);
+        beanDefinitionBuilder.addConstructorArgValue(producerRegistryAO.getTopic());
+        beanDefinitionBuilder.addConstructorArgReference(producerRegistryAO.getKafkaTemplateBeanName());
+        producerRegistryAO.getRegistry().registerBeanDefinition(producerRegistryAO.getProducerBeanName(), beanDefinitionBuilder.getBeanDefinition());
     }
 
     private void registerKafkaTemplate(ProducerRegistryAO producerRegistryAO) {
