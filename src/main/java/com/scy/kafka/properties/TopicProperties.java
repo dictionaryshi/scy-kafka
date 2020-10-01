@@ -15,6 +15,8 @@ import lombok.ToString;
 @ToString
 public class TopicProperties {
 
+    private String name;
+
     private String topic;
 
     private String groupId;

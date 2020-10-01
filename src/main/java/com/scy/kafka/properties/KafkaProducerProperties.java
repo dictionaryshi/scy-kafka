@@ -17,5 +17,5 @@ import java.util.List;
 @ToString
 public class KafkaProducerProperties {
 
-    private List<String> topics;
+    private List<TopicProperties> topics;
 }
