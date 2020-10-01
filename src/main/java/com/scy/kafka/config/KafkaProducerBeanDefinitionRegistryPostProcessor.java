@@ -2,9 +2,13 @@ package com.scy.kafka.config;
 
 import com.scy.core.CollectionUtil;
 import com.scy.core.ObjectUtil;
+import com.scy.core.StringUtil;
+import com.scy.core.enums.ResponseCodeEnum;
+import com.scy.core.exception.BusinessException;
 import com.scy.core.format.MessageUtil;
 import com.scy.core.spring.ApplicationContextUtil;
 import com.scy.kafka.properties.KafkaProperties;
+import com.scy.kafka.properties.TopicProperties;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
@@ -13,6 +17,8 @@ import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProce
 import org.springframework.boot.context.properties.bind.Bindable;
 import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.lang.NonNull;
+
+import java.util.List;
 
 /**
  * KafkaProducerBeanDefinitionRegistryPostProcessor
@@ -38,7 +44,21 @@ public class KafkaProducerBeanDefinitionRegistryPostProcessor implements BeanDef
             return;
         }
 
+        checkParam(kafkaProperties.getProducer().getTopics());
+
         log.info(MessageUtil.format("kafka producer config", "topics", kafkaProperties.getProducer().getTopics()));
+    }
+
+    private void checkParam(List<TopicProperties> topics) {
+        topics.forEach(topicProperty -> {
+            if (StringUtil.isEmpty(topicProperty.getName())) {
+                throw new BusinessException(ResponseCodeEnum.SYSTEM_EXCEPTION.getCode(), "kafka producer config 缺少name");
+            }
+
+            if (StringUtil.isEmpty(topicProperty.getTopic())) {
+                throw new BusinessException(ResponseCodeEnum.SYSTEM_EXCEPTION.getCode(), "kafka producer config 缺少topic");
+            }
+        });
     }
 
     @Override
