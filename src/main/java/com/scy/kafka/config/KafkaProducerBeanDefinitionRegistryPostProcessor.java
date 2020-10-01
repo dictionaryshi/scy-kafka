@@ -7,6 +7,8 @@ import com.scy.core.enums.ResponseCodeEnum;
 import com.scy.core.exception.BusinessException;
 import com.scy.core.format.MessageUtil;
 import com.scy.core.spring.ApplicationContextUtil;
+import com.scy.kafka.constant.KafkaConstant;
+import com.scy.kafka.model.ao.ProducerRegistryAO;
 import com.scy.kafka.properties.KafkaProperties;
 import com.scy.kafka.properties.TopicProperties;
 import lombok.extern.slf4j.Slf4j;
@@ -47,6 +49,35 @@ public class KafkaProducerBeanDefinitionRegistryPostProcessor implements BeanDef
         checkParam(kafkaProperties.getProducer().getTopics());
 
         log.info(MessageUtil.format("kafka producer config", "topics", kafkaProperties.getProducer().getTopics()));
+
+        kafkaProperties.getProducer().getTopics().stream().map(topicProperty -> {
+            ProducerRegistryAO producerRegistryAO = new ProducerRegistryAO();
+            producerRegistryAO.setProducerFactoryBeanName(topicProperty.getName() + KafkaConstant.PRODUCER_FACTORY);
+            producerRegistryAO.setKafkaTemplateBeanName(topicProperty.getName() + KafkaConstant.KAFKA_TEMPLATE);
+            producerRegistryAO.setProducerBeanName(topicProperty.getName() + KafkaConstant.PRODUCER);
+
+            producerRegistryAO.setServers(kafkaProperties.getServers());
+            producerRegistryAO.setTopic(topicProperty.getTopic());
+            producerRegistryAO.setRegistry(registry);
+            return producerRegistryAO;
+        }).forEach(this::registerProducer);
+    }
+
+    private void registerProducer(ProducerRegistryAO producerRegistryAO) {
+        registerProducerFactory(producerRegistryAO);
+
+        registerKafkaTemplate(producerRegistryAO);
+
+        registerProducerClient(producerRegistryAO);
+    }
+
+    private void registerProducerClient(ProducerRegistryAO producerRegistryAO) {
+    }
+
+    private void registerKafkaTemplate(ProducerRegistryAO producerRegistryAO) {
+    }
+
+    private void registerProducerFactory(ProducerRegistryAO producerRegistryAO) {
     }
 
     private void checkParam(List<TopicProperties> topics) {
