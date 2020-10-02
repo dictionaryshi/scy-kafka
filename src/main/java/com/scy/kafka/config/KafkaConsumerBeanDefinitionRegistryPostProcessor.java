@@ -11,16 +11,20 @@ import com.scy.kafka.constant.KafkaConstant;
 import com.scy.kafka.model.ao.ConsumerRegistryAO;
 import com.scy.kafka.properties.KafkaProperties;
 import com.scy.kafka.properties.TopicProperties;
+import com.scy.kafka.util.KafkaUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor;
 import org.springframework.boot.context.properties.bind.Bindable;
 import org.springframework.boot.context.properties.bind.Binder;
+import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.lang.NonNull;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * KafkaConsumerBeanDefinitionRegistryPostProcessor
@@ -77,6 +81,11 @@ public class KafkaConsumerBeanDefinitionRegistryPostProcessor implements BeanDef
     }
 
     private void registerConsumerFactory(ConsumerRegistryAO consumerRegistryAO) {
+        BeanDefinitionBuilder beanDefinitionBuilder = BeanDefinitionBuilder.genericBeanDefinition(DefaultKafkaConsumerFactory.class, () -> {
+            Map<String, Object> consumerConfigs = KafkaUtil.getConsumerConfigs(consumerRegistryAO.getServers(), consumerRegistryAO.getTopicProperties().getTopic(), consumerRegistryAO.getTopicProperties().getGroupId());
+            return new DefaultKafkaConsumerFactory<String, String>(consumerConfigs);
+        });
+        consumerRegistryAO.getRegistry().registerBeanDefinition(consumerRegistryAO.getConsumerFactoryBeanName(), beanDefinitionBuilder.getBeanDefinition());
     }
 
     private void checkParam(List<TopicProperties> topics) {

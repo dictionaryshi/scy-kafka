@@ -1,7 +1,7 @@
 package com.scy.kafka.util;
 
 import com.scy.core.CollectionUtil;
-import com.scy.core.UUIDUtil;
+import com.scy.core.RandomUtil;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
@@ -82,7 +82,7 @@ public class KafkaUtil {
 
         props.put(ConsumerConfig.GROUP_ID_CONFIG, groupId);
 
-        props.put(ConsumerConfig.GROUP_INSTANCE_ID_CONFIG, topic + "_" + groupId + "_" + UUIDUtil.uuid());
+        props.put(ConsumerConfig.GROUP_INSTANCE_ID_CONFIG, topic + "_" + groupId + "_" + RandomUtil.getRandomText(6));
 
         props.put(ConsumerConfig.MAX_PARTITION_FETCH_BYTES_CONFIG, 3 * 1024 * 1024);
 
