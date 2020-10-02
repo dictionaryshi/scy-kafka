@@ -20,7 +20,9 @@ import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor;
 import org.springframework.boot.context.properties.bind.Bindable;
 import org.springframework.boot.context.properties.bind.Binder;
+import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
+import org.springframework.kafka.listener.ContainerProperties;
 import org.springframework.lang.NonNull;
 
 import java.util.List;
@@ -78,6 +80,15 @@ public class KafkaConsumerBeanDefinitionRegistryPostProcessor implements BeanDef
     }
 
     private void registerConcurrentKafkaListenerContainerFactory(ConsumerRegistryAO consumerRegistryAO) {
+        BeanDefinitionBuilder beanDefinitionBuilder = BeanDefinitionBuilder.genericBeanDefinition(ConcurrentKafkaListenerContainerFactory.class, () -> {
+            ConcurrentKafkaListenerContainerFactory<String, String> concurrentKafkaListenerContainerFactory = new ConcurrentKafkaListenerContainerFactory<>();
+            concurrentKafkaListenerContainerFactory.setConcurrency(1);
+            concurrentKafkaListenerContainerFactory.setBatchListener(Boolean.FALSE);
+            concurrentKafkaListenerContainerFactory.getContainerProperties().setAckMode(ContainerProperties.AckMode.MANUAL_IMMEDIATE);
+            return concurrentKafkaListenerContainerFactory;
+        });
+        beanDefinitionBuilder.addPropertyReference("consumerFactory", consumerRegistryAO.getConsumerFactoryBeanName());
+        consumerRegistryAO.getRegistry().registerBeanDefinition(consumerRegistryAO.getConcurrentKafkaListenerContainerFactoryBeanName(), beanDefinitionBuilder.getBeanDefinition());
     }
 
     private void registerConsumerFactory(ConsumerRegistryAO consumerRegistryAO) {
