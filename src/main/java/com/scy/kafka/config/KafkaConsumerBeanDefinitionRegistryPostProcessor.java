@@ -77,6 +77,10 @@ public class KafkaConsumerBeanDefinitionRegistryPostProcessor implements BeanDef
     }
 
     private void registerConcurrentMessageListenerContainer(ConsumerRegistryAO consumerRegistryAO) {
+        BeanDefinitionBuilder beanDefinitionBuilder = BeanDefinitionBuilder.genericBeanDefinition(ConcurrentMessageListenerContainerFactoryBean.class);
+        beanDefinitionBuilder.addPropertyReference("concurrentKafkaListenerContainerFactory", consumerRegistryAO.getConcurrentKafkaListenerContainerFactoryBeanName());
+        beanDefinitionBuilder.addPropertyValue("consumerRegistry", consumerRegistryAO);
+        consumerRegistryAO.getRegistry().registerBeanDefinition(consumerRegistryAO.getConcurrentMessageListenerContainerBeanName(), beanDefinitionBuilder.getBeanDefinition());
     }
 
     private void registerConcurrentKafkaListenerContainerFactory(ConsumerRegistryAO consumerRegistryAO) {
