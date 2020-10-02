@@ -6,8 +6,10 @@ import com.scy.core.StringUtil;
 import com.scy.core.enums.ResponseCodeEnum;
 import com.scy.core.exception.BusinessException;
 import com.scy.core.format.MessageUtil;
+import com.scy.core.reflect.ClassUtil;
 import com.scy.core.spring.ApplicationContextUtil;
 import com.scy.kafka.constant.KafkaConstant;
+import com.scy.kafka.listener.AbstractAcknowledgingMessageListener;
 import com.scy.kafka.model.ao.ConsumerRegistryAO;
 import com.scy.kafka.properties.KafkaProperties;
 import com.scy.kafka.properties.TopicProperties;
@@ -20,8 +22,8 @@ import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor;
 import org.springframework.boot.context.properties.bind.Bindable;
 import org.springframework.boot.context.properties.bind.Binder;
-import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
+import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
 import org.springframework.kafka.listener.ContainerProperties;
 import org.springframework.lang.NonNull;
 
@@ -60,7 +62,6 @@ public class KafkaConsumerBeanDefinitionRegistryPostProcessor implements BeanDef
             consumerRegistryAO.setTopicProperties(topicProperties);
             consumerRegistryAO.setRegistry(registry);
             consumerRegistryAO.setConsumerFactoryBeanName(topicProperties.getName() + KafkaConstant.CONSUMER_FACTORY);
-            consumerRegistryAO.setConcurrentKafkaListenerContainerFactoryBeanName(topicProperties.getName() + KafkaConstant.CONCURRENT_KAFKA_LISTENER_CONTAINER_FACTORY);
             consumerRegistryAO.setConcurrentMessageListenerContainerBeanName(topicProperties.getName() + KafkaConstant.CONCURRENT_MESSAGE_LISTENER_CONTAINER);
             return consumerRegistryAO;
         }).forEach(this::registerConsumer);
@@ -71,28 +72,29 @@ public class KafkaConsumerBeanDefinitionRegistryPostProcessor implements BeanDef
     private void registerConsumer(ConsumerRegistryAO consumerRegistryAO) {
         registerConsumerFactory(consumerRegistryAO);
 
-        registerConcurrentKafkaListenerContainerFactory(consumerRegistryAO);
-
         registerConcurrentMessageListenerContainer(consumerRegistryAO);
     }
 
     private void registerConcurrentMessageListenerContainer(ConsumerRegistryAO consumerRegistryAO) {
-        BeanDefinitionBuilder beanDefinitionBuilder = BeanDefinitionBuilder.genericBeanDefinition(ConcurrentMessageListenerContainerFactoryBean.class);
-        beanDefinitionBuilder.addPropertyReference("concurrentKafkaListenerContainerFactory", consumerRegistryAO.getConcurrentKafkaListenerContainerFactoryBeanName());
-        beanDefinitionBuilder.addPropertyValue("consumerRegistry", consumerRegistryAO);
-        consumerRegistryAO.getRegistry().registerBeanDefinition(consumerRegistryAO.getConcurrentMessageListenerContainerBeanName(), beanDefinitionBuilder.getBeanDefinition());
-    }
+        BeanDefinitionBuilder beanDefinitionBuilder = BeanDefinitionBuilder.genericBeanDefinition(ConcurrentMessageListenerContainer.class);
+        beanDefinitionBuilder.addConstructorArgReference(consumerRegistryAO.getConsumerFactoryBeanName());
 
-    private void registerConcurrentKafkaListenerContainerFactory(ConsumerRegistryAO consumerRegistryAO) {
-        BeanDefinitionBuilder beanDefinitionBuilder = BeanDefinitionBuilder.genericBeanDefinition(ConcurrentKafkaListenerContainerFactory.class, () -> {
-            ConcurrentKafkaListenerContainerFactory<String, String> concurrentKafkaListenerContainerFactory = new ConcurrentKafkaListenerContainerFactory<>();
-            concurrentKafkaListenerContainerFactory.setConcurrency(1);
-            concurrentKafkaListenerContainerFactory.setBatchListener(Boolean.FALSE);
-            concurrentKafkaListenerContainerFactory.getContainerProperties().setAckMode(ContainerProperties.AckMode.MANUAL_IMMEDIATE);
-            return concurrentKafkaListenerContainerFactory;
-        });
-        beanDefinitionBuilder.addPropertyReference("consumerFactory", consumerRegistryAO.getConsumerFactoryBeanName());
-        consumerRegistryAO.getRegistry().registerBeanDefinition(consumerRegistryAO.getConcurrentKafkaListenerContainerFactoryBeanName(), beanDefinitionBuilder.getBeanDefinition());
+        ContainerProperties containerProperties = new ContainerProperties(consumerRegistryAO.getTopicProperties().getTopic());
+        Class<?> listenerClass = ClassUtil.resolveClassName(consumerRegistryAO.getTopicProperties().getListenerClassName(), ClassUtil.getDefaultClassLoader());
+        if (!ClassUtil.isAssignable(AbstractAcknowledgingMessageListener.class, listenerClass)) {
+            throw new BusinessException(ResponseCodeEnum.SYSTEM_EXCEPTION.getCode(), MessageUtil.format("listener class类型不正确", "listener", consumerRegistryAO.getTopicProperties().getListenerClassName()));
+        }
+        Map<String, ?> beanMap = ApplicationContextUtil.getBeansOfType(listenerClass);
+        if (CollectionUtil.isEmpty(beanMap)) {
+            throw new BusinessException(ResponseCodeEnum.SYSTEM_EXCEPTION.getCode(), MessageUtil.format("listener 对象不存在", "listener", consumerRegistryAO.getTopicProperties().getListenerClassName()));
+        }
+        containerProperties.setMessageListener(beanMap.values().stream().findAny().orElse(null));
+
+        containerProperties.setGroupId(consumerRegistryAO.getTopicProperties().getGroupId());
+        containerProperties.setAckMode(ContainerProperties.AckMode.MANUAL_IMMEDIATE);
+        beanDefinitionBuilder.addConstructorArgValue(containerProperties);
+
+        consumerRegistryAO.getRegistry().registerBeanDefinition(consumerRegistryAO.getConcurrentMessageListenerContainerBeanName(), beanDefinitionBuilder.getBeanDefinition());
     }
 
     private void registerConsumerFactory(ConsumerRegistryAO consumerRegistryAO) {

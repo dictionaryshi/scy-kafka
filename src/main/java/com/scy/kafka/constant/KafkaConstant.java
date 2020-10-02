@@ -19,7 +19,5 @@ public class KafkaConstant {
 
     public static final String CONSUMER_FACTORY = "ConsumerFactory";
 
-    public static final String CONCURRENT_KAFKA_LISTENER_CONTAINER_FACTORY = "ConcurrentKafkaListenerContainerFactory";
-
     public static final String CONCURRENT_MESSAGE_LISTENER_CONTAINER = "ConcurrentMessageListenerContainer";
 }
