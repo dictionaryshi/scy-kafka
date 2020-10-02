@@ -1,8 +1,6 @@
 package com.scy.kafka.config;
 
-import com.scy.core.CollectionUtil;
-import com.scy.core.ObjectUtil;
-import com.scy.core.StringUtil;
+import com.scy.core.*;
 import com.scy.core.enums.ResponseCodeEnum;
 import com.scy.core.exception.BusinessException;
 import com.scy.core.format.MessageUtil;
@@ -14,6 +12,7 @@ import com.scy.kafka.properties.TopicProperties;
 import com.scy.kafka.util.KafkaProducer;
 import com.scy.kafka.util.KafkaUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.clients.producer.ProducerConfig;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
@@ -26,6 +25,7 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.lang.NonNull;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * KafkaProducerBeanDefinitionRegistryPostProcessor
@@ -90,7 +90,11 @@ public class KafkaProducerBeanDefinitionRegistryPostProcessor implements BeanDef
     }
 
     private void registerProducerFactory(ProducerRegistryAO producerRegistryAO) {
-        BeanDefinitionBuilder beanDefinitionBuilder = BeanDefinitionBuilder.genericBeanDefinition(DefaultKafkaProducerFactory.class, () -> new DefaultKafkaProducerFactory<String, String>(KafkaUtil.getProducerConfigs(producerRegistryAO.getServers())));
+        BeanDefinitionBuilder beanDefinitionBuilder = BeanDefinitionBuilder.genericBeanDefinition(DefaultKafkaProducerFactory.class, () -> {
+            Map<String, Object> producerConfigs = KafkaUtil.getProducerConfigs(producerRegistryAO.getServers());
+            producerConfigs.put(ProducerConfig.CLIENT_ID_CONFIG, producerRegistryAO.getTopic() + "_" + RandomUtil.getRandomText(6));
+            return new DefaultKafkaProducerFactory<String, String>(producerConfigs);
+        });
         producerRegistryAO.getRegistry().registerBeanDefinition(producerRegistryAO.getProducerFactoryBeanName(), beanDefinitionBuilder.getBeanDefinition());
     }
 
