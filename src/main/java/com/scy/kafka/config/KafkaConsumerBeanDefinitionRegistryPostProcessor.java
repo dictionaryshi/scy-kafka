@@ -7,6 +7,8 @@ import com.scy.core.enums.ResponseCodeEnum;
 import com.scy.core.exception.BusinessException;
 import com.scy.core.format.MessageUtil;
 import com.scy.core.spring.ApplicationContextUtil;
+import com.scy.kafka.constant.KafkaConstant;
+import com.scy.kafka.model.ao.ConsumerRegistryAO;
 import com.scy.kafka.properties.KafkaProperties;
 import com.scy.kafka.properties.TopicProperties;
 import lombok.extern.slf4j.Slf4j;
@@ -46,7 +48,35 @@ public class KafkaConsumerBeanDefinitionRegistryPostProcessor implements BeanDef
 
         checkParam(kafkaProperties.getConsumer().getTopics());
 
+        kafkaProperties.getConsumer().getTopics().stream().map(topicProperties -> {
+            ConsumerRegistryAO consumerRegistryAO = new ConsumerRegistryAO();
+            consumerRegistryAO.setServers(kafkaProperties.getServers());
+            consumerRegistryAO.setTopicProperties(topicProperties);
+            consumerRegistryAO.setRegistry(registry);
+            consumerRegistryAO.setConsumerFactoryBeanName(topicProperties.getName() + KafkaConstant.CONSUMER_FACTORY);
+            consumerRegistryAO.setConcurrentKafkaListenerContainerFactoryBeanName(topicProperties.getName() + KafkaConstant.CONCURRENT_KAFKA_LISTENER_CONTAINER_FACTORY);
+            consumerRegistryAO.setConcurrentMessageListenerContainerBeanName(topicProperties.getName() + KafkaConstant.CONCURRENT_MESSAGE_LISTENER_CONTAINER);
+            return consumerRegistryAO;
+        }).forEach(this::registerConsumer);
+
         log.info(MessageUtil.format("kafka consumer config", "topics", kafkaProperties.getConsumer().getTopics()));
+    }
+
+    private void registerConsumer(ConsumerRegistryAO consumerRegistryAO) {
+        registerConsumerFactory(consumerRegistryAO);
+
+        registerConcurrentKafkaListenerContainerFactory(consumerRegistryAO);
+
+        registerConcurrentMessageListenerContainer(consumerRegistryAO);
+    }
+
+    private void registerConcurrentMessageListenerContainer(ConsumerRegistryAO consumerRegistryAO) {
+    }
+
+    private void registerConcurrentKafkaListenerContainerFactory(ConsumerRegistryAO consumerRegistryAO) {
+    }
+
+    private void registerConsumerFactory(ConsumerRegistryAO consumerRegistryAO) {
     }
 
     private void checkParam(List<TopicProperties> topics) {
