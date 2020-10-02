@@ -55,6 +55,10 @@ public class KafkaConsumerBeanDefinitionRegistryPostProcessor implements BeanDef
                 throw new BusinessException(ResponseCodeEnum.SYSTEM_EXCEPTION.getCode(), "kafka consumer config 缺少name");
             }
 
+            if (StringUtil.isEmpty(topicProperty.getListenerClassName())) {
+                throw new BusinessException(ResponseCodeEnum.SYSTEM_EXCEPTION.getCode(), "kafka consumer config 缺少listenerClassName");
+            }
+
             if (StringUtil.isEmpty(topicProperty.getTopic())) {
                 throw new BusinessException(ResponseCodeEnum.SYSTEM_EXCEPTION.getCode(), "kafka consumer config 缺少topic");
             }
