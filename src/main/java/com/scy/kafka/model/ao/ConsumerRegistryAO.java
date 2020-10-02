@@ -25,7 +25,5 @@ public class ConsumerRegistryAO {
 
     private String consumerFactoryBeanName;
 
-    private String concurrentKafkaListenerContainerFactoryBeanName;
-
     private String concurrentMessageListenerContainerBeanName;
 }
