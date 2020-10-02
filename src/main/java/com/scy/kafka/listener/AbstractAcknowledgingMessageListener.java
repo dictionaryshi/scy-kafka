@@ -1,5 +1,6 @@
 package com.scy.kafka.listener;
 
+import com.scy.core.trace.TraceUtil;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.kafka.listener.AcknowledgingMessageListener;
 import org.springframework.kafka.support.Acknowledgment;
@@ -14,8 +15,14 @@ public abstract class AbstractAcknowledgingMessageListener implements Acknowledg
 
     @Override
     public void onMessage(ConsumerRecord<String, String> consumerRecord, Acknowledgment acknowledgment) {
-        listen(consumerRecord);
-        acknowledgment.acknowledge();
+        try {
+            TraceUtil.setTraceId(null);
+
+            listen(consumerRecord);
+        } finally {
+            TraceUtil.clearTrace();
+            acknowledgment.acknowledge();
+        }
     }
 
     /**
