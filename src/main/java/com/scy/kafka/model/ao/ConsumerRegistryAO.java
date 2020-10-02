@@ -7,15 +7,15 @@ import lombok.ToString;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 
 /**
- * ProducerRegistryAO
+ * ConsumerRegistryAO
  *
  * @author shichunyang
- * Created by shichunyang on 2020/10/1.
+ * Created by shichunyang on 2020/10/2.
  */
 @Getter
 @Setter
 @ToString
-public class ProducerRegistryAO {
+public class ConsumerRegistryAO {
 
     private String servers;
 
@@ -23,9 +23,9 @@ public class ProducerRegistryAO {
 
     private BeanDefinitionRegistry registry;
 
-    private String producerFactoryBeanName;
+    private String consumerFactoryBeanName;
 
-    private String kafkaTemplateBeanName;
+    private String concurrentKafkaListenerContainerFactoryBeanName;
 
-    private String producerBeanName;
+    private String concurrentMessageListenerContainerBeanName;
 }

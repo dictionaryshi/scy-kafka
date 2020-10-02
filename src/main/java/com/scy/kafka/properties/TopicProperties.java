@@ -17,6 +17,8 @@ public class TopicProperties {
 
     private String name;
 
+    private String listenerClassName;
+
     private String topic;
 
     private String groupId;

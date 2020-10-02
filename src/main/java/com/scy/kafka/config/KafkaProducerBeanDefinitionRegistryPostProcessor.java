@@ -62,7 +62,7 @@ public class KafkaProducerBeanDefinitionRegistryPostProcessor implements BeanDef
             producerRegistryAO.setProducerBeanName(topicProperty.getName() + KafkaConstant.PRODUCER);
 
             producerRegistryAO.setServers(kafkaProperties.getServers());
-            producerRegistryAO.setTopic(topicProperty.getTopic());
+            producerRegistryAO.setTopicProperties(topicProperty);
             producerRegistryAO.setRegistry(registry);
             return producerRegistryAO;
         }).forEach(this::registerProducer);
@@ -78,7 +78,7 @@ public class KafkaProducerBeanDefinitionRegistryPostProcessor implements BeanDef
 
     private void registerProducerClient(ProducerRegistryAO producerRegistryAO) {
         BeanDefinitionBuilder beanDefinitionBuilder = BeanDefinitionBuilder.genericBeanDefinition(KafkaProducer.class);
-        beanDefinitionBuilder.addConstructorArgValue(producerRegistryAO.getTopic());
+        beanDefinitionBuilder.addConstructorArgValue(producerRegistryAO.getTopicProperties().getTopic());
         beanDefinitionBuilder.addConstructorArgReference(producerRegistryAO.getKafkaTemplateBeanName());
         producerRegistryAO.getRegistry().registerBeanDefinition(producerRegistryAO.getProducerBeanName(), beanDefinitionBuilder.getBeanDefinition());
     }
@@ -92,7 +92,7 @@ public class KafkaProducerBeanDefinitionRegistryPostProcessor implements BeanDef
     private void registerProducerFactory(ProducerRegistryAO producerRegistryAO) {
         BeanDefinitionBuilder beanDefinitionBuilder = BeanDefinitionBuilder.genericBeanDefinition(DefaultKafkaProducerFactory.class, () -> {
             Map<String, Object> producerConfigs = KafkaUtil.getProducerConfigs(producerRegistryAO.getServers());
-            producerConfigs.put(ProducerConfig.CLIENT_ID_CONFIG, producerRegistryAO.getTopic() + "_" + RandomUtil.getRandomText(6));
+            producerConfigs.put(ProducerConfig.CLIENT_ID_CONFIG, producerRegistryAO.getTopicProperties().getTopic() + "_" + RandomUtil.getRandomText(6));
             return new DefaultKafkaProducerFactory<String, String>(producerConfigs);
         });
         producerRegistryAO.getRegistry().registerBeanDefinition(producerRegistryAO.getProducerFactoryBeanName(), beanDefinitionBuilder.getBeanDefinition());
