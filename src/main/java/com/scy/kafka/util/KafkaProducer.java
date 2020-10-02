@@ -36,12 +36,16 @@ public class KafkaProducer {
 
             @Override
             public void onFailure(@NonNull Throwable throwable) {
-                log.error(MessageUtil.format(traceId + " kafka send error", throwable, "topic", topic, "key", key, "value", value));
+                TraceUtil.putMdc(TraceUtil.TRACE_ID, traceId);
+                log.error(MessageUtil.format("kafka send error", throwable, "topic", topic, "key", key, "value", value));
+                TraceUtil.clearMdc();
             }
 
             @Override
             public void onSuccess(SendResult<String, String> result) {
-                log.info(MessageUtil.format(traceId + " kafka send success", "topic", topic, "key", key, "value", value));
+                TraceUtil.putMdc(TraceUtil.TRACE_ID, traceId);
+                log.info(MessageUtil.format("kafka send success", "topic", topic, "key", key, "value", value));
+                TraceUtil.clearMdc();
             }
         });
         try {
