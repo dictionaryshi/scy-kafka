@@ -33,12 +33,13 @@ public abstract class AbstractAcknowledgingMessageListener implements Acknowledg
 
             log.info(MessageUtil.format("kafka listen",
                     "topic", topic, "key", key, "value", value, "partition", partition, "offset", offset, StringUtil.COST, System.currentTimeMillis() - startTime));
+
+            acknowledgment.acknowledge();
         } catch (Throwable throwable) {
             log.error(MessageUtil.format("kafka listen error", throwable,
                     "topic", topic, "key", key, "value", value, "partition", partition, "offset", offset));
         } finally {
             TraceUtil.clearTrace();
-            acknowledgment.acknowledge();
         }
     }
 
