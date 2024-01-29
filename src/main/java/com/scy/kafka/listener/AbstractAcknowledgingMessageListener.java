@@ -38,6 +38,7 @@ public abstract class AbstractAcknowledgingMessageListener implements Acknowledg
         } catch (Throwable throwable) {
             log.error(MessageUtil.format("kafka listen error", throwable,
                     "topic", topic, "key", key, "value", value, "partition", partition, "offset", offset));
+            throw throwable;
         } finally {
             TraceUtil.clearTrace();
         }
