@@ -28,7 +28,7 @@ public class KafkaProducer {
         String traceId = TraceUtil.getTraceId();
 
         return kafkaTemplate.executeInTransaction(operations -> {
-            ListenableFuture<SendResult<String, String>> listenableFuture = kafkaTemplate.send(topic, key, value);
+            ListenableFuture<SendResult<String, String>> listenableFuture = operations.send(topic, key, value);
             listenableFuture.addCallback(new ListenableFutureCallback<SendResult<String, String>>() {
                 @Override
                 public void onFailure(@NonNull Throwable throwable) {
