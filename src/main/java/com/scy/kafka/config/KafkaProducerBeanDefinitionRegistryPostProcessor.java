@@ -93,7 +93,9 @@ public class KafkaProducerBeanDefinitionRegistryPostProcessor implements BeanDef
         BeanDefinitionBuilder beanDefinitionBuilder = BeanDefinitionBuilder.genericBeanDefinition(DefaultKafkaProducerFactory.class, () -> {
             Map<String, Object> producerConfigs = KafkaUtil.getProducerConfigs(producerRegistryAO.getServers());
             producerConfigs.put(ProducerConfig.CLIENT_ID_CONFIG, producerRegistryAO.getTopicProperties().getTopic() + "_" + RandomUtil.getRandomText(6));
-            return new DefaultKafkaProducerFactory<String, String>(producerConfigs);
+            DefaultKafkaProducerFactory<String, String> producerFactory = new DefaultKafkaProducerFactory<>(producerConfigs);
+            producerFactory.setTransactionIdPrefix("kafka-tx-");
+            return producerFactory;
         });
         producerRegistryAO.getRegistry().registerBeanDefinition(producerRegistryAO.getProducerFactoryBeanName(), beanDefinitionBuilder.getBeanDefinition());
     }
