@@ -26,4 +26,6 @@ public class ConsumerRegistryAO {
     private String consumerFactoryBeanName;
 
     private String concurrentMessageListenerContainerBeanName;
+
+    private String errorHandlerBeanName;
 }
