@@ -89,14 +89,13 @@ public class KafkaConsumerBeanDefinitionRegistryPostProcessor implements BeanDef
             long maxInterval = 30_000L;
             // 乘数为2, 实现按2的次幂增长
             double multiplier = 2.0;
-            // 最大重试次
+            // 最大重试次数
 //            int maxAttempts = Integer.MAX_VALUE;
 
             ExponentialBackOff exponentialBackOff = new ExponentialBackOff(initialInterval, multiplier);
             exponentialBackOff.setMaxInterval(maxInterval);
 //            exponentialBackOff.setMaxElapsedTime(maxInterval * maxAttempts);
 
-            // 设置最大重试次数为100次
             return new DefaultErrorHandler(exponentialBackOff);
         });
         consumerRegistryAO.getRegistry().registerBeanDefinition(consumerRegistryAO.getErrorHandlerBeanName(), beanDefinitionBuilder.getBeanDefinition());
