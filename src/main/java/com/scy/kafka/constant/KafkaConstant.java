@@ -22,4 +22,8 @@ public class KafkaConstant {
     public static final String CONCURRENT_MESSAGE_LISTENER_CONTAINER = "ConcurrentMessageListenerContainer";
 
     public static final String ERROR_HANDLER = "ErrorHandler";
+
+    public static final String DEAD_QUEUE = "DeadQueue";
+
+    public static final String DEAD = "dead";
 }

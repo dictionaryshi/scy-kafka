@@ -28,4 +28,8 @@ public class ConsumerRegistryAO {
     private String concurrentMessageListenerContainerBeanName;
 
     private String errorHandlerBeanName;
+
+    private String kafkaTemplateBeanName;
+
+    private String deadQueueBeanName;
 }

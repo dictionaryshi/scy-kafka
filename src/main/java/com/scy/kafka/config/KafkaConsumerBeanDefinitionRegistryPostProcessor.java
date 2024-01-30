@@ -15,6 +15,9 @@ import com.scy.kafka.properties.KafkaProperties;
 import com.scy.kafka.properties.TopicProperties;
 import com.scy.kafka.util.KafkaUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.common.header.internals.RecordHeader;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
@@ -25,12 +28,14 @@ import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
 import org.springframework.kafka.listener.ContainerProperties;
+import org.springframework.kafka.listener.DeadLetterPublishingRecoverer;
 import org.springframework.kafka.listener.DefaultErrorHandler;
 import org.springframework.lang.NonNull;
 import org.springframework.util.backoff.ExponentialBackOff;
 
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiFunction;
 
 /**
  * KafkaConsumerBeanDefinitionRegistryPostProcessor
@@ -66,6 +71,8 @@ public class KafkaConsumerBeanDefinitionRegistryPostProcessor implements BeanDef
             consumerRegistryAO.setConsumerFactoryBeanName(topicProperties.getName() + KafkaConstant.CONSUMER_FACTORY);
             consumerRegistryAO.setConcurrentMessageListenerContainerBeanName(topicProperties.getName() + KafkaConstant.CONCURRENT_MESSAGE_LISTENER_CONTAINER);
             consumerRegistryAO.setErrorHandlerBeanName(topicProperties.getName() + KafkaConstant.ERROR_HANDLER);
+            consumerRegistryAO.setKafkaTemplateBeanName(topicProperties.getName() + KafkaConstant.KAFKA_TEMPLATE);
+            consumerRegistryAO.setDeadQueueBeanName(topicProperties.getName() + KafkaConstant.DEAD_QUEUE);
             return consumerRegistryAO;
         }).forEach(this::registerConsumer);
 
@@ -81,23 +88,32 @@ public class KafkaConsumerBeanDefinitionRegistryPostProcessor implements BeanDef
     }
 
     private void registerErrorHandler(ConsumerRegistryAO consumerRegistryAO) {
-        BeanDefinitionBuilder beanDefinitionBuilder = BeanDefinitionBuilder.genericBeanDefinition(DefaultErrorHandler.class, () -> {
+        BeanDefinitionBuilder beanDefinitionBuilder = BeanDefinitionBuilder.genericBeanDefinition(DefaultErrorHandler.class);
 
-            // 初始间隔为1秒
-            long initialInterval = 1_000L;
-            // 最大间隔为30秒
-            long maxInterval = 30_000L;
-            // 乘数为2, 实现按2的次幂增长
-            double multiplier = 2.0;
-            // 最大重试次数
-//            int maxAttempts = Integer.MAX_VALUE;
+        BeanDefinitionBuilder deadQueueBeanDefinitionBuilder = BeanDefinitionBuilder.genericBeanDefinition(DeadLetterPublishingRecoverer.class);
+        deadQueueBeanDefinitionBuilder.addConstructorArgReference(consumerRegistryAO.getKafkaTemplateBeanName());
 
-            ExponentialBackOff exponentialBackOff = new ExponentialBackOff(initialInterval, multiplier);
-            exponentialBackOff.setMaxInterval(maxInterval);
-//            exponentialBackOff.setMaxElapsedTime(maxInterval * maxAttempts);
-
-            return new DefaultErrorHandler(exponentialBackOff);
+        deadQueueBeanDefinitionBuilder.addConstructorArgValue((BiFunction<ConsumerRecord<?, ?>, Exception, TopicPartition>) (consumerRecord, e) -> {
+            consumerRecord.headers().add(new RecordHeader(KafkaConstant.DEAD, null));
+            return new TopicPartition(consumerRecord.topic(), consumerRecord.partition());
         });
+        consumerRegistryAO.getRegistry().registerBeanDefinition(consumerRegistryAO.getDeadQueueBeanName(), deadQueueBeanDefinitionBuilder.getBeanDefinition());
+
+        beanDefinitionBuilder.addConstructorArgReference(consumerRegistryAO.getDeadQueueBeanName());
+
+        // 初始间隔为1秒
+        long initialInterval = 1_000L;
+        // 最大间隔为30秒
+        long maxInterval = 30_000L;
+        // 乘数为2, 实现按2的次幂增长
+        double multiplier = 2.0;
+        // 最大重试次数
+        int maxAttempts = 2;
+        ExponentialBackOff exponentialBackOff = new ExponentialBackOff(initialInterval, multiplier);
+        exponentialBackOff.setMaxInterval(maxInterval);
+        exponentialBackOff.setMaxElapsedTime(maxInterval * maxAttempts);
+        beanDefinitionBuilder.addConstructorArgValue(exponentialBackOff);
+
         consumerRegistryAO.getRegistry().registerBeanDefinition(consumerRegistryAO.getErrorHandlerBeanName(), beanDefinitionBuilder.getBeanDefinition());
     }
 
